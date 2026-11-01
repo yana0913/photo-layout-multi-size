@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="把多张照片按真实厘米尺寸自动排到 A4、A5、A6 或佳能 L 照片纸，并保存为图片、PDF 或直接打印。"
+    />
+    <meta name="theme-color" content="#101827" />
+    <title>寸纸 · 多尺寸照片排版</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101827'/%3E%3Cpath d='M17 11h25l7 7v35H17z' fill='%23fff'/%3E%3Cpath d='M42 11v8h7' fill='none' stroke='%2395a4ff' stroke-width='4'/%3E%3Crect x='22' y='27' width='21' height='17' rx='2' fill='%2395a4ff'/%3E%3Ccircle cx='37' cy='32' r='3' fill='%23fff'/%3E%3Cpath d='m23 42 6-7 5 5 3-3 5 5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style id="printPageStyle"></style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="寸纸首页">
+        <span class="brand-mark" aria-hidden="true">寸</span>
+        <span>寸纸</span>
+      </a>
+      <div class="privacy-note">
+        <span class="privacy-dot" aria-hidden="true"></span>
+        照片只在本机处理，不会上传
+      </div>
+      <button class="button button-primary export-button" id="exportButton" type="button" disabled>
+        保存 / 导出
+      </button>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="排版设置">
+        <section class="upload-panel" id="dropZone">
+          <input id="fileInput" type="file" accept="image/*" multiple hidden />
+          <button class="upload-button" id="uploadButton" type="button">
+            <span class="upload-icon" aria-hidden="true">＋</span>
+            <span>添加照片</span>
+          </button>
+          <p>可多选，也可以拖到这里</p>
+          <p class="upload-formats">JPG、PNG、WebP 等浏览器支持的图片</p>
+        </section>
+
+        <section class="settings-section" aria-labelledby="pageSettingsTitle">
+          <div class="section-heading">
+            <h2 id="pageSettingsTitle">纸张设置</h2>
+            <span id="pageCountLabel">0 页</span>
+          </div>
+          <div class="paper-size-row">
+            <label class="paper-control">
+              <span>纸张尺寸</span>
+              <select id="paperSizeSelect">
+                <option value="a4">A4 · 210 × 297 mm</option>
+                <option value="a5">A5 · 148 × 210 mm</option>
+                <option value="a6">A6 · 105 × 148 mm</option>
+                <option value="canonL">佳能 L · 119 × 89 mm</option>
+              </select>
+            </label>
+            <span class="paper-dimensions" id="paperDimensions">A4 · 210 × 297 mm</span>
+          </div>
+          <div class="settings-grid">
+            <label>
+              <span>页边距</span>
+              <span class="unit-input">
+                <input id="marginInput" type="number" min="0" max="30" step="1" value="10" />
+                <span>mm</span>
+              </span>
+            </label>
+            <label>
+              <span>照片间距</span>
+              <span class="unit-input">
+                <input id="gapInput" type="number" min="0" max="30" step="1" value="5" />
+                <span>mm</span>
+              </span>
+            </label>
+          </div>
+          <label class="orientation-control">
+            <span>纸张方向</span>
+            <select id="orientationSelect">
+              <option value="portrait">纵向</option>
+              <option value="landscape">横向</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="settings-section photo-section" aria-labelledby="photoSettingsTitle">
+          <div class="section-heading">
+            <h2 id="photoSettingsTitle">照片尺寸</h2>
+            <button class="text-button" id="clearButton" type="button" hidden>清空</button>
+          </div>
+          <div class="photo-list" id="photoList">
+            <div class="list-empty">
+              <span>暂无照片</span>
+              <p>添加后可逐张设置实际打印尺寸</p>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="preview-area" aria-labelledby="previewTitle">
+        <div class="preview-header">
+          <div>
+            <p class="eyebrow">实时预览</p>
+            <h1 id="previewTitle">多尺寸照片排版</h1>
+          </div>
+          <div class="preview-summary" id="previewSummary">添加照片后自动排版</div>
+        </div>
+
+        <div class="pages" id="pages">
+          <div class="empty-state">
+            <div class="empty-sheet" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <h2>把照片放进纸张里</h2>
+            <p>每张照片都可以锁定宽度或高度，另一边会按原图比例自动计算。</p>
+            <button class="button button-secondary" id="emptyUploadButton" type="button">选择照片</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog class="export-dialog" id="exportDialog" aria-labelledby="exportDialogTitle">
+      <div class="export-dialog-card">
+        <div class="export-dialog-heading">
+          <div>
+            <p class="eyebrow">移动端友好</p>
+            <h2 id="exportDialogTitle">保存排版结果</h2>
+          </div>
+          <button class="dialog-close" id="closeExportButton" type="button" aria-label="关闭">×</button>
+        </div>
+
+        <div class="export-options">
+          <button class="export-option" id="saveAlbumButton" type="button">
+            <span class="export-option-icon album" aria-hidden="true">册</span>
+            <span>
+              <strong>保存图片到相册</strong>
+              <small>推荐手机使用 · 打开系统相册保存面板</small>
+            </span>
+            <span class="export-option-arrow" aria-hidden="true">›</span>
+          </button>
+
+          <button class="export-option" id="saveImageButton" type="button">
+            <span class="export-option-icon" aria-hidden="true">下</span>
+            <span>
+              <strong>下载 PNG 文件</strong>
+              <small id="imageExportMeta">每页一张 PNG · A4 300 DPI · 保存到文件</small>
+            </span>
+            <span class="export-option-arrow" aria-hidden="true">›</span>
+          </button>
+
+          <button class="export-option" id="savePdfButton" type="button">
+            <span class="export-option-icon pdf" aria-hidden="true">PDF</span>
+            <span>
+              <strong>保存为 PDF</strong>
+              <small id="pdfExportMeta">多页合并 · A4 实际尺寸 · 适合打印</small>
+            </span>
+            <span class="export-option-arrow" aria-hidden="true">›</span>
+          </button>
+
+          <button class="export-option" id="printButton" type="button">
+            <span class="export-option-icon print" aria-hidden="true">印</span>
+            <span>
+              <strong>直接打印</strong>
+              <small>调用浏览器打印功能</small>
+            </span>
+            <span class="export-option-arrow" aria-hidden="true">›</span>
+          </button>
+        </div>
+
+        <p class="export-help">
+          文件生成后需要再确认一次。iPhone 在系统面板选择“存储图像”，安卓选择相册或照片应用。浏览器不支持相册入口时会自动下载 PNG。
+        </p>
+        <p class="export-status" id="exportStatus" role="status" aria-live="polite"></p>
+        <button class="button button-primary confirm-save-button" id="confirmSaveButton" type="button" hidden>
+          打开系统保存
+        </button>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="vendor/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
